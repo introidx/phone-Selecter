@@ -1,59 +1,57 @@
 package com.geeksforgeeks.phone_number_selector_api
 
-import android.content.Context
 import android.content.Intent
 import android.content.IntentSender
-import android.content.pm.PackageManager
 import android.os.Bundle
-import android.telephony.TelephonyManager
-import android.util.Log
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import com.google.android.gms.auth.api.Auth
-import com.google.android.gms.auth.api.credentials.Credential
-import com.google.android.gms.auth.api.credentials.Credentials
-import com.google.android.gms.auth.api.credentials.HintRequest
-import com.google.android.gms.common.api.GoogleApiClient
-import kotlinx.android.synthetic.main.activity_main.*
-import android.Manifest
-import android.annotation.SuppressLint
+import android.widget.Button
+import android.widget.TextView
 import android.widget.Toast
-
+import androidx.appcompat.app.AppCompatActivity
+import com.google.android.gms.auth.api.credentials.*
+import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
+
+    lateinit var open_btn : Button
+    lateinit var tv1 : TextView
+
     companion object{
         var CREDENTIAL_PICKER_REQUEST=1
-        val permission_reuest = 101
     }
 
-    @SuppressLint("HardwareIds")
     override fun onCreate(savedInstanceState: Bundle?) {
-
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        hojasuru()
 
+        open_btn = findViewById(R.id.btn_open)
+        tv1 = findViewById(R.id.tv1)
+
+        // set on click listener to button to open the phone selector dialog
+
+        open_btn.setOnClickListener {
+            phoneSelection()
+        }
     }
+    private fun phoneSelection() {
+        //To retrieve the Phone Number hints, first, configure the hint selector dialog by creating a HintRequest object.
 
-
-    private fun hojasuru() {
         val hintRequest = HintRequest.Builder()
                 .setPhoneNumberIdentifierSupported(true)
                 .build()
 
-        val credentialsClient = Credentials.getClient(applicationContext)
+        val options = CredentialsOptions.Builder()
+                .forceEnableSaveDialog()
+                .build()
+
+        //Then, pass the HintRequest object to credentialsClient.getHintPickerIntent()
+        // to get an intent to prompt the user to choose a phone number.
+        val credentialsClient = Credentials.getClient(applicationContext , options)
         val intent = credentialsClient.getHintPickerIntent(hintRequest)
         try {
             startIntentSenderForResult(
                     intent.intentSender,
-                    CREDENTIAL_PICKER_REQUEST,
-                    null,
-                    0,
-                    0,
-                    0,
-                    Bundle()
+                    CREDENTIAL_PICKER_REQUEST, null, 0, 0, 0, Bundle()
             )
-            Log.d("prakash", "runs")
         } catch (e: IntentSender.SendIntentException) {
             e.printStackTrace()
         }
@@ -62,41 +60,14 @@ class MainActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == CREDENTIAL_PICKER_REQUEST && resultCode == RESULT_OK){
-
-            var credential : Credential?  = data?.getParcelableExtra(Credential.EXTRA_KEY)
+            // get data from the dialog which is of type Credential
+            val credential : Credential?  = data?.getParcelableExtra(Credential.EXTRA_KEY)
+            // set the received data t the text view
             credential?.apply {
                 tv1.text = credential.id
             }
-
+        } else if (requestCode == CREDENTIAL_PICKER_REQUEST && resultCode == CredentialsApi.ACTIVITY_RESULT_NO_HINTS_AVAILABLE) {
+            Toast.makeText(this, "No phone numbers found", Toast.LENGTH_LONG).show();
         }
     }
 }
-
-//        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) !=
-//                PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this,
-//                        Manifest.permission.READ_PHONE_NUMBERS) != PackageManager.PERMISSION_GRANTED &&
-//                ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) !=
-//                PackageManager.PERMISSION_GRANTED) {
-//            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_PHONE_STATE),permission_reuest)
-//        }
-//
-//        val telephonyManager = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
-//        tv1.text = telephonyManager.line1Number.toString()
-
-//
-//    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-//        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-//
-//        if (requestCode == permission_reuest){
-//            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-//                Toast.makeText(this, "Permission Granted", Toast.LENGTH_SHORT).show()
-//            } else {
-//                Toast.makeText(this, "Permission Denied", Toast.LENGTH_SHORT).show()
-//            }
-//        }
-//
-//        else {
-//            Toast.makeText(this, "Permission Denied", Toast.LENGTH_SHORT).show()
-//        }
-//
-//    }
